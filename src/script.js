@@ -1,6 +1,7 @@
 import './style.css'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { DoubleSide } from 'three'
 
 /**
  * Base
@@ -19,8 +20,7 @@ const sizes = {
     height: window.innerHeight
 }
 
-window.addEventListener('resize', () =>
-{
+window.addEventListener('resize', () => {
     // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
@@ -38,10 +38,10 @@ window.addEventListener('resize', () =>
  * Camera
  */
 // Base camera
-const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+const camera = new THREE.PerspectiveCamera(80, sizes.width / sizes.height, 0.1, 100)
 camera.position.x = 1
 camera.position.y = 1
-camera.position.z = 1
+camera.position.z = 5
 scene.add(camera)
 
 // Controls
@@ -49,13 +49,34 @@ const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
 
 /**
- * Cube
+ * Objects
  */
-const cube = new THREE.Mesh(
-    new THREE.BoxGeometry(1, 1, 1),
-    new THREE.MeshBasicMaterial({ color: 0xff0000 })
-)
-scene.add(cube)
+// Helicoid fn
+function helicoid(u, v, target) {
+    let alpha = Math.PI * 2 * (u - 0.5)
+    let theta = Math.PI * 2 * v 
+
+    const t = 5
+    const bottom = 1 + Math.cosh(alpha) * Math.cosh(theta)
+
+    let x = Math.sinh(alpha) * Math.cos(t*theta) / bottom
+    let y = Math.sinh(alpha) * Math.sin(t*theta) / bottom
+    let z = Math.sinh(alpha) * Math.cosh(theta) / bottom
+
+    target.set(x, y, z)
+
+}
+
+const geo = new THREE.ParametricGeometry(helicoid, 200, 200)
+const mat = new THREE.MeshPhysicalMaterial({
+    color: 0xccc,
+    roughness: 0,
+    metalness: 0.5,
+    clearcoat: 1,
+    clearcoatRoughness: 0.4,
+    side: DoubleSide
+})
+scene.add(new THREE.Mesh(geo, mat))
 
 /**
  * Renderer
@@ -68,13 +89,25 @@ renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
 /**
+ * Lighting
+ */
+{
+    scene.add(new THREE.AmbientLight(0xfff, .5))
+}
+
+{
+    const light = new THREE.DirectionalLight(0xfff, 1)
+    light.position.set(1, 0, 1)
+    scene.add(light)
+}
+
+/**
  * Animate
  */
 const clock = new THREE.Clock()
 let lastElapsedTime = 0
 
-const tick = () =>
-{
+const tick = () => {
     const elapsedTime = clock.getElapsedTime()
     const deltaTime = elapsedTime - lastElapsedTime
     lastElapsedTime = elapsedTime
