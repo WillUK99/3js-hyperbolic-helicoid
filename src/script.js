@@ -41,7 +41,7 @@ window.addEventListener('resize', () => {
 const camera = new THREE.PerspectiveCamera(80, sizes.width / sizes.height, 0.1, 100)
 camera.position.x = 1
 camera.position.y = 1
-camera.position.z = 5
+camera.position.z = 3
 scene.add(camera)
 
 // Controls
@@ -53,30 +53,35 @@ controls.enableDamping = true
  */
 // Helicoid fn
 function helicoid(u, v, target) {
-    let alpha = Math.PI * 2 * (u - 0.5)
-    let theta = Math.PI * 2 * v 
+    let alpha = Math.PI * 2 * (u - .5)
+    let theta = Math.PI * 2 * (v - .5)
 
     const t = 5
     const bottom = 1 + Math.cosh(alpha) * Math.cosh(theta)
 
-    let x = Math.sinh(alpha) * Math.cos(t*theta) / bottom
-    let y = Math.sinh(alpha) * Math.sin(t*theta) / bottom
-    let z = Math.sinh(alpha) * Math.cosh(theta) / bottom
+    let x = Math.sinh(alpha) * Math.cos(t * theta) / bottom
+    let y = 1.5 * Math.cosh(alpha) * Math.sinh(theta) / bottom
+    let z = Math.sinh(alpha) * Math.sin(t * theta) / bottom
 
     target.set(x, y, z)
 
 }
 
 const geo = new THREE.ParametricGeometry(helicoid, 200, 200)
-const mat = new THREE.MeshPhysicalMaterial({
-    color: 0xccc,
-    roughness: 0,
-    metalness: 0.5,
-    clearcoat: 1,
-    clearcoatRoughness: 0.4,
-    side: DoubleSide
-})
-scene.add(new THREE.Mesh(geo, mat))
+function getMaterial() {
+    const mat = new THREE.MeshPhysicalMaterial({
+        color: 0x3f07c5,
+        roughness: 1,
+        metalness: .75,
+        clearcoat: .5,
+        clearcoatRoughness: 0.1,
+        side: DoubleSide
+    })
+
+    return mat
+}
+const mesh = new THREE.Mesh(geo, getMaterial())
+scene.add(mesh)
 
 /**
  * Renderer
@@ -92,12 +97,14 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
  * Lighting
  */
 {
-    scene.add(new THREE.AmbientLight(0xfff, .5))
+    scene.add(new THREE.AmbientLight(0xffffff, 1))
 }
 
 {
-    const light = new THREE.DirectionalLight(0xfff, 1)
-    light.position.set(1, 0, 1)
+    const light = new THREE.DirectionalLight(0xffffff, 1)
+    light.position.x = 1
+    light.position.y = 0
+    light.position.z = 1
     scene.add(light)
 }
 
@@ -107,10 +114,13 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 const clock = new THREE.Clock()
 let lastElapsedTime = 0
 
+
 const tick = () => {
     const elapsedTime = clock.getElapsedTime()
     const deltaTime = elapsedTime - lastElapsedTime
     lastElapsedTime = elapsedTime
+
+    mesh.rotation.y = elapsedTime
 
     // Update controls
     controls.update()
